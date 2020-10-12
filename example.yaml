@@ -1,0 +1,10 @@
+templates:
+  - secret: arn:aw:secretsmanager:eu-west-1:12345678:secret:rds/instancename/what/ever/secret/path
+    template: |
+      DATABASE_HOST="{{.host}}"
+      DATABASE_USERNAME="{{.username}}"
+      DATABASE_PASSWORD="{{.password}}"
+  - secret: if/you.have/nore/secrets
+    template: |
+      KAFKA_USERNAME="{{.username}}"
+      KAFKA_PASSWORD="{{.password}}"

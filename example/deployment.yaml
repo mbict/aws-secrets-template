@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-example
+spec:
+  selector:
+    matchLabels:
+      app: test-example
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: test-example
+    spec:
+      serviceAccountName: aws-service-account-with-isra
+      containers:
+        - name: app
+          image: busybox
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /var/run/secrets/env
+              name: aws-secrets
+              readOnly: true
+      initContainers:
+        - image: mbict/aws-secrets-template
+          name: inject-aws-secrets
+          args:
+            - -c
+            - /template.yaml
+            - -r
+            - eu-west-1
+            - -o
+            - /var/run/secrets/env/.env
+          volumeMounts:
+            - mountPath: /template.yaml
+              name: config-volume
+              subPath: template.yaml
+            - mountPath: /var/run/secrets/env
+              name: aws-secrets
+      volumes:
+        - name: config-volume
+          configMap:
+            name: template-config
+        - name: aws-secrets
+          emptyDir:
+            medium: Memory
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-service-account-with-isra
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-secrets-template-config
+data:
+  template.yaml: |
+    templates:
+      - secret: arn:aws:secretsmanager:eu-west-1:1234567:secret:rds/somewhre/over/the-rainbow
+        template: |
+          DATABASE_HOST="{{.host}}"
+          DATABASE_PORT="{{.port}}"
+          DATABASE_DBNAME="{{.dbname}}"
+          DATABASE_USERNAME="{{.username}}"
+          DATABASE_PASSWORD="{{.password}}"
+          DATABASE_ENGINE="{{.engine}}"
+          DATABASE_DB_CLUSTER_IDENTIFIER="{{.dbClusterIdentifier}}"
+      - secret: documentdb/direct/secret
+        template: |
+          DOCUMENT_DB_USERNAME="{{.username}}"
+          DOCUMENT_DB_USERNAME="{{.password}}"
+          DOCUMENT_DB_MONGO="{{.engine}}"
+          DOCUMENT_DB_HOST="{{.host}}"
+          DOCUMENT_DB_PORT="{{.port}}"
+          DOCUMENT_DB_SSL="{{.ssl}}"
+          DOCUMENT_DB_CLUSTER_IDENTIFIER="{{.dbClusterIdentifier}}"
+      - secret: kafka/creds/secretpath
+        template: |
+          KAFKA_USERNAME="{{.USERNAME}}"
+          KAFKA_PASSWORD="{{.PASSWORD}}"
