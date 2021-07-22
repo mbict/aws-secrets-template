@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
@@ -63,7 +64,7 @@ func main() {
 
 	for _, secretConfig := range config.Templates {
 		//parse template
-		t := template.New("config")
+		t := template.New("config").Funcs(sprig.GenericFuncMap())
 		template.Must(t.Parse(secretConfig.Template))
 
 		//get secrets from aws
